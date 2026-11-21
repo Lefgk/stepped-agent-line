@@ -1,0 +1,29 @@
+# Build artifacts (broadcast can contain signing material)
+out/
+cache/
+broadcast/
+
+# Secrets and local env (never commit values)
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# Keystores and local signing material
+*.jks
+*.keystore
+*.p12
+*.pfx
+keystore/
+.keystore/
+*.secret
+
+# Dependencies and frontend / SDK build
+node_modules/
+web/dist/
+sdk/dist/
+
+# Static analysis machine output
+slither.json
+
+web/tsconfig.tsbuildinfo

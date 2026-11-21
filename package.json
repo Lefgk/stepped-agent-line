@@ -1,0 +1,14 @@
+{
+  "name": "stepped-agent-line",
+  "private": true,
+  "description": "Backer-funded stepped USDC credit lines for AI agents (Ethereum mainnet and Base).",
+  "scripts": {
+    "test": "forge test",
+    "test:dapp": "npm --prefix web ci --prefer-offline --no-audit --fund=false && npm --prefix web run build",
+    "test:fork-deploy": "./script/test-deploy-fork.sh",
+    "deploy:mainnet": "test -n \"$MAINNET_RPC_URL$RPC_URL\" && RPC_URL=\"${MAINNET_RPC_URL:-$RPC_URL}\" ./script/deploy.sh --broadcast",
+    "deploy:base": "test -n \"$BASE_RPC_URL$RPC_URL\" && RPC_URL=\"${BASE_RPC_URL:-$RPC_URL}\" ./script/deploy.sh --broadcast",
+    "deploy:mainnet:dry": "RPC_URL=\"${MAINNET_RPC_URL:-$RPC_URL}\" ./script/deploy.sh",
+    "deploy:base:dry": "RPC_URL=\"${BASE_RPC_URL:-$RPC_URL}\" ./script/deploy.sh"
+  }
+}

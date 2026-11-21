@@ -1,0 +1,43 @@
+Stepped Agent Line slither (22 Nov 2026). 8 findings, no High/Critical.
+The Medium 'incorrect-equality' on _capAt(tier == 0) is a false positive (integer tier, not a timestamp or balance equality).
+Remaining Lows are expected: block.timestamp for due dates, optional guardian may be address(0).
+
+'forge config --json' running
+'forge build --build-info --deny never --skip ./test/** ./script/** --force' running (wd: /workspace/pm-builds/stepped-agent-line)
+INFO:Detectors:
+Detector: incorrect-equality
+SteppedAgentVault._capAt(uint128,uint128,uint128,uint32) (src/SteppedAgentVault.sol#382-388) uses a dangerous strict equality:
+	- tier == 0 (src/SteppedAgentVault.sol#383)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#dangerous-strict-equalities
+INFO:Detectors:
+Detector: missing-zero-check
+SteppedAgentVault.setGuardian(address).newGuardian (src/SteppedAgentVault.sol#147) lacks a zero-check on :
+		- guardian = newGuardian (src/SteppedAgentVault.sol#148)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#missing-zero-address-validation
+INFO:Detectors:
+Detector: timestamp
+SteppedAgentVault.openLine(address,uint128,uint128,uint128,uint64,uint64,bool) (src/SteppedAgentVault.sol#156-195) uses timestamp for comparisons
+	Dangerous comparisons:
+	- line.principal > line.currentCap (src/SteppedAgentVault.sol#191)
+SteppedAgentVault.markDefault(address) (src/SteppedAgentVault.sol#226-239) uses timestamp for comparisons
+	Dangerous comparisons:
+	- block.timestamp <= uint256(line.dueDate) + line.grace (src/SteppedAgentVault.sol#230)
+SteppedAgentVault.borrow(address,uint256,bytes32) (src/SteppedAgentVault.sol#258-285) uses timestamp for comparisons
+	Dangerous comparisons:
+	- line.dueDate != 0 && block.timestamp >= line.dueDate (src/SteppedAgentVault.sol#265)
+SteppedAgentVault.repay(address,uint256) (src/SteppedAgentVault.sol#291-317) uses timestamp for comparisons
+	Dangerous comparisons:
+	- ! line.frozen && block.timestamp <= line.dueDate (src/SteppedAgentVault.sol#308)
+SteppedAgentVault.availableCredit(address) (src/SteppedAgentVault.sol#355-363) uses timestamp for comparisons
+	Dangerous comparisons:
+	- ! line.active || line.frozen || paused() (src/SteppedAgentVault.sol#357)
+	- line.dueDate != 0 && block.timestamp >= line.dueDate (src/SteppedAgentVault.sol#358)
+	- line.principal >= line.currentCap (src/SteppedAgentVault.sol#359)
+	- room < bal (src/SteppedAgentVault.sol#362)
+SteppedAgentVault._capAt(uint128,uint128,uint128,uint32) (src/SteppedAgentVault.sol#382-388) uses timestamp for comparisons
+	Dangerous comparisons:
+	- tier == 0 (src/SteppedAgentVault.sol#383)
+	- step != 0 && uint256(tier) > type()(uint256).max / step (src/SteppedAgentVault.sol#384)
+	- stepped > maxCap (src/SteppedAgentVault.sol#386)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#block-timestamp
+INFO:Slither:. analyzed (17 contracts with 102 detectors), 8 result(s) found
