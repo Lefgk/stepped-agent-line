@@ -96,3 +96,7 @@ The anvil deploy uses anvil's unlocked dev accounts, so no private key is stored
 
 ## Regenerate ABIs
 `forge build && node tools/gen-abi.mjs` writes `web/src/abi.ts`.
+
+## Contact
+
+Support and questions: [lg.playstudio@gmail.com](mailto:lg.playstudio@gmail.com)
