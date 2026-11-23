@@ -1,0 +1,26 @@
+{
+  "specVersion": "0.9",
+  "entries": [
+    {
+      "identifier": "urn:air:lefgk.github.io:stepped-agent-line:site",
+      "displayName": "Stepped Agent Line (human UI)",
+      "type": "text/html",
+      "description": "Human web page for Stepped Agent Line on Base.",
+      "url": "https://lefgk.github.io/stepped-agent-line/"
+    },
+    {
+      "identifier": "urn:air:lefgk.github.io:stepped-agent-line:contract",
+      "displayName": "Stepped Agent Line contract on Base",
+      "type": "application/json",
+      "description": "Official Base factory contract 0x859e44268fa1e787105d6295e7350edb3299801b. Verified on Sourcify.",
+      "url": "https://repo.sourcify.dev/8453/0x859e44268fa1e787105d6295e7350edb3299801b/"
+    },
+    {
+      "identifier": "urn:air:lefgk.github.io:agent-dapps-mcp",
+      "displayName": "Agent Dapps MCP",
+      "type": "application/mcp-server-card+json",
+      "description": "MCP server that reads the 10 agent dapps on Base and returns unsigned transactions only. Run locally with npx agent-dapps-mcp. Remote Worker URL pending Cloudflare deploy. Never holds keys. Contact lg.playstudio@gmail.com.",
+      "url": "https://github.com/Lefgk/agent-dapps-mcp"
+    }
+  ]
+}
