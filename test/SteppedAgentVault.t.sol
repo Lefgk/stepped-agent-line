@@ -67,6 +67,8 @@ contract SteppedAgentVaultTest is Test {
         vault.borrow(shop, amount, "c");
         vm.prank(payer);
         vault.repay(agent, amount);
+        // audit H-1: at most one step per term, so move to the next term
+        vm.warp(block.timestamp + TERM);
     }
 
     // ---------------------------------------------------------------- happy paths
@@ -74,20 +76,20 @@ contract SteppedAgentVaultTest is Test {
     function test_borrowAndRepayStartsCycle() public {
         uint64 expectedDue = uint64(block.timestamp + TERM);
         vm.expectEmit(true, true, false, true);
-        emit Borrowed(agent, shop, 40e6, 40e6, expectedDue, "job-1");
+        emit Borrowed(agent, shop, 60e6, 60e6, expectedDue, "job-1");
         vm.prank(agent);
-        vault.borrow(shop, 40e6, "job-1");
-        assertEq(usdc.balanceOf(shop), 40e6);
-        assertEq(vault.amountDue(agent), 40e6);
-        assertEq(vault.totalPrincipal(), 40e6);
+        vault.borrow(shop, 60e6, "job-1");
+        assertEq(usdc.balanceOf(shop), 60e6);
+        assertEq(vault.amountDue(agent), 60e6);
+        assertEq(vault.totalPrincipal(), 60e6);
         assertEq(_line().dueDate, expectedDue);
         assertEq(_line().currentCap, STARTER);
 
         vm.expectEmit(true, true, false, true);
-        emit Repaid(agent, payer, 15e6, 25e6);
+        emit Repaid(agent, payer, 15e6, 45e6);
         vm.prank(payer);
         vault.repay(agent, 15e6);
-        assertEq(vault.amountDue(agent), 25e6);
+        assertEq(vault.amountDue(agent), 45e6);
         // partial repay does not step
         assertEq(_line().currentCap, STARTER);
         assertEq(_hist().onTimeCount, 0);
@@ -95,7 +97,7 @@ contract SteppedAgentVaultTest is Test {
         vm.expectEmit(true, false, false, true);
         emit Stepped(agent, STARTER + STEP, 1);
         vm.prank(agent);
-        vault.repay(agent, 25e6);
+        vault.repay(agent, 45e6);
         assertEq(vault.amountDue(agent), 0);
         assertEq(_line().dueDate, 0);
         assertEq(_line().currentCap, STARTER + STEP);
@@ -228,10 +230,10 @@ contract SteppedAgentVaultTest is Test {
 
     function test_optionalAllowlistAndRevoke() public {
         vm.prank(agent);
-        vault.borrow(stranger, 10e6, "open");
-        assertEq(usdc.balanceOf(stranger), 10e6);
+        vault.borrow(stranger, 50e6, "open");
+        assertEq(usdc.balanceOf(stranger), 50e6);
         vm.prank(payer);
-        vault.repay(agent, 10e6);
+        vault.repay(agent, 50e6);
         assertEq(_line().currentCap, STARTER + STEP);
 
         vm.startPrank(owner);
@@ -286,7 +288,7 @@ contract SteppedAgentVaultTest is Test {
         vm.prank(owner);
         vault.openLine(agent, STARTER, STEP, MAX_CAP, TERM, GRACE, false);
         vm.prank(agent);
-        vault.borrow(shop, 20e6, "p");
+        vault.borrow(shop, 50e6, "p");
 
         vm.prank(guardian);
         vault.pause();
@@ -295,7 +297,7 @@ contract SteppedAgentVaultTest is Test {
         vault.borrow(shop, 1e6, "no");
 
         vm.prank(payer);
-        vault.repay(agent, 20e6); // on-time repay while paused still steps
+        vault.repay(agent, 50e6); // on-time repay while paused still steps
         assertEq(_line().currentCap, STARTER + STEP);
 
         uint256 before = usdc.balanceOf(owner);
@@ -426,7 +428,7 @@ contract SteppedAgentVaultTest is Test {
     }
 
     function test_publicCreditHistoryShape() public {
-        _cycle(40e6);
+        _cycle(50e6);
         SteppedAgentVault.CreditHistory memory h = _credit();
         assertEq(h.onTimeCount, 1);
         assertEq(h.defaultCount, 0);

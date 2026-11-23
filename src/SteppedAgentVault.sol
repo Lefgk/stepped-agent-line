@@ -21,6 +21,9 @@ contract SteppedAgentVault is Ownable2Step, Pausable, ReentrancyGuard {
     uint64 public constant MIN_TERM = 1 days;
     uint64 public constant MAX_TERM = 365 days;
     uint64 public constant MAX_GRACE = 14 days;
+    /// @notice A cycle only counts toward a step if its peak debt reached this share of the cap.
+    uint16 public constant MIN_USAGE_BPS = 5_000; // 50%
+    uint16 public constant BPS_DENOMINATOR = 10_000;
 
     struct Line {
         bool active; // false = revoked / never opened
@@ -73,6 +76,8 @@ contract SteppedAgentVault is Ownable2Step, Pausable, ReentrancyGuard {
     mapping(address agent => History) public histories;
     /// @dev key = keccak256(agent, epoch, recipient)
     mapping(bytes32 key => bool) internal _recipientAllowed;
+    /// @notice Peak outstanding debt in the agent's current cycle (reset when the cycle closes).
+    mapping(address agent => uint128) public cyclePeak;
 
     event Deposited(address indexed from, uint256 amount);
     event Withdrawn(address indexed to, uint256 amount);
@@ -186,6 +191,7 @@ contract SteppedAgentVault is Ownable2Step, Pausable, ReentrancyGuard {
             hist.currentTier = 0;
             line.currentCap = starterCap;
             line.dueDate = 0;
+            cyclePeak[agent] = 0;
         } else {
             line.currentCap = _capAt(starterCap, stepSize, maxCap, hist.currentTier);
             if (line.principal > line.currentCap) revert CapBelowDebt();
@@ -246,6 +252,7 @@ contract SteppedAgentVault is Ownable2Step, Pausable, ReentrancyGuard {
         if (line.principal != 0) revert DebtOutstanding();
         line.frozen = false;
         line.dueDate = 0;
+        cyclePeak[agent] = 0;
         histories[agent].currentTier = 0;
         line.currentCap = line.starterCap;
         emit DefaultCleared(agent, msg.sender, line.currentCap);
@@ -273,6 +280,7 @@ contract SteppedAgentVault is Ownable2Step, Pausable, ReentrancyGuard {
         if (amount > type(uint128).max - line.principal) revert ExceedsCredit(newDebt, line.currentCap);
 
         line.principal = uint128(newDebt);
+        if (newDebt > cyclePeak[msg.sender]) cyclePeak[msg.sender] = uint128(newDebt);
         if (line.dueDate == 0) {
             line.dueDate = uint64(block.timestamp + line.term);
         }
@@ -286,7 +294,8 @@ contract SteppedAgentVault is Ownable2Step, Pausable, ReentrancyGuard {
 
     /// @notice Anyone may repay an agent's debt. Overpayments are capped to the outstanding amount.
     ///         Allowed while paused, after revoke, and after a freeze. A full repayment at or
-    ///         before `dueDate` steps the cap up (unless frozen). A full repayment after
+    ///         before `dueDate` steps the cap up (unless frozen) if the cycle's peak debt
+    ///         reached MIN_USAGE_BPS of the cap and one `term` has passed since the last step. A full repayment after
     ///         `dueDate` is late: no step, no automatic default.
     function repay(address agent, uint256 amount) external nonReentrant {
         if (amount == 0) revert ZeroAmount();
@@ -306,13 +315,17 @@ contract SteppedAgentVault is Ownable2Step, Pausable, ReentrancyGuard {
 
         if (line.principal == 0 && line.dueDate != 0) {
             if (!line.frozen && block.timestamp <= line.dueDate) {
-                _stepUp(agent, line, hist);
+                // Audit H-1: only a cycle that used a real share of the cap, at most once per
+                // term, earns a step and an on-time count. Stops dust / same-block borrow-repay
+                // loops from climbing the ladder to maxCap and inflating the public history.
+                if (_qualifies(agent, line, hist)) _stepUp(agent, line, hist);
             } else if (!line.frozen) {
                 unchecked {
                     hist.lateCount += 1;
                 }
             }
             line.dueDate = 0;
+            cyclePeak[agent] = 0;
         }
     }
 
@@ -376,6 +389,14 @@ contract SteppedAgentVault is Ownable2Step, Pausable, ReentrancyGuard {
         hist.lastOnTimeAt = uint64(block.timestamp);
         line.currentCap = _capAt(line.starterCap, line.stepSize, line.maxCap, hist.currentTier);
         emit Stepped(agent, line.currentCap, hist.currentTier);
+    }
+
+    /// @dev A cycle qualifies for a step if its peak debt reached MIN_USAGE_BPS of the cap and at
+    ///      least one `term` has passed since the last step.
+    function _qualifies(address agent, Line storage line, History storage hist) internal view returns (bool) {
+        if (uint256(cyclePeak[agent]) * BPS_DENOMINATOR < uint256(line.currentCap) * MIN_USAGE_BPS) return false;
+        if (hist.lastOnTimeAt != 0 && block.timestamp < uint256(hist.lastOnTimeAt) + line.term) return false;
+        return true;
     }
 
     /// @dev currentCap = min(starter + tier * step, max). Never exceeds maxCap.

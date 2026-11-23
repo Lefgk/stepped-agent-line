@@ -76,15 +76,15 @@ abstract contract ForkBase is FundUsdc {
     function test_fork_onTimeRepayStepsCapWithRealUsdc() public onFork {
         uint256 vault0 = usdc.balanceOf(address(vault));
         vm.prank(agent);
-        vault.borrow(shop, 40e6, "a");
-        assertEq(usdc.balanceOf(shop), 40e6);
-        assertEq(vault.amountDue(agent), 40e6);
+        vault.borrow(shop, 60e6, "a");
+        assertEq(usdc.balanceOf(shop), 60e6);
+        assertEq(vault.amountDue(agent), 60e6);
         assertEq(usdc.balanceOf(address(vault)) + vault.amountDue(agent), vault0);
 
-        fundUsdc(address(usdc), agent, 200e6);
+        fundUsdc(address(usdc), agent, 300e6);
         vm.startPrank(agent);
         IERC20(address(usdc)).approve(address(vault), type(uint256).max);
-        vault.repay(agent, 40e6);
+        vault.repay(agent, 60e6);
         vm.stopPrank();
 
         assertEq(vault.amountDue(agent), 0);
@@ -94,6 +94,7 @@ abstract contract ForkBase is FundUsdc {
         assertLe(vault.getLine(agent).currentCap, MAX_CAP);
         assertEq(usdc.balanceOf(address(vault)), vault0);
 
+        vm.warp(block.timestamp + 30 days); // audit H-1: one step per term
         vm.prank(agent);
         vault.borrow(shop, STARTER + STEP, "full");
         vm.prank(agent);
