@@ -19,8 +19,8 @@
       "identifier": "urn:air:lefgk.github.io:agent-dapps-mcp",
       "displayName": "Agent Dapps MCP",
       "type": "application/mcp-server-card+json",
-      "description": "MCP server that reads the 10 agent dapps on Base and returns unsigned transactions only. Run locally with npx agent-dapps-mcp. Remote Worker URL pending Cloudflare deploy. Never holds keys. Contact lg.playstudio@gmail.com.",
-      "url": "https://github.com/Lefgk/agent-dapps-mcp"
+      "description": "MCP server that reads the 10 agent dapps on Base and returns unsigned transactions only. Run locally with npx agent-dapps-mcp. Remote Streamable HTTP: https://agent-dapps-mcp.graph-proxy.workers.dev/mcp. Never holds keys. Contact lg.playstudio@gmail.com.",
+      "url": "https://agent-dapps-mcp.graph-proxy.workers.dev/mcp"
     }
   ]
 }
