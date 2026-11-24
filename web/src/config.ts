@@ -7,7 +7,7 @@ import deploymentsFile from "./deployments.json";
 const env = import.meta.env;
 
 export const config = createConfig({
-  chains: [mainnet, base, foundry],
+  chains: [base, mainnet, foundry],
   connectors: [injected()],
   transports: {
     [mainnet.id]: http(env.VITE_MAINNET_RPC || undefined),
